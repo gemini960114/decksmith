@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # DeckSmith 轉錄主程式
+  decksmith:
+    build: .
+    container_name: decksmith-app
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - decksmith-net
+
+  # Nginx 反向代理 (SSL)
+  nginx:
+    image: nginx:alpine
+    container_name: decksmith-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/certs:ro
+    depends_on:
+      - decksmith
+    networks:
+      - decksmith-net
+
+networks:
+  decksmith-net:
+    driver: bridge
