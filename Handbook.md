@@ -1,10 +1,5 @@
 # DeckSmith - AI PDF 重建引擎操作手冊
 
-- User Manual: [English](https://hackmd.io/@whYPD8MBSHWRZV6y-ymFwQ/SJrhK4TE-l) | [Chinese (ZH-TW)](https://hackmd.io/@whYPD8MBSHWRZV6y-ymFwQ/Sy8V2a1SWx)
-- Install Guide: [English](https://hackmd.io/@whYPD8MBSHWRZV6y-ymFwQ/BkRON0yrWl) | [Chinese (ZH-TW)](https://hackmd.io/@whYPD8MBSHWRZV6y-ymFwQ/rynoMC1HWg)
-- GitHub Project: [DeckSmith](https://github.com/gemini960114/decksmith)
-
-
 **DeckSmith** 是一個運用 Google Gemini 先進視覺模型技術的應用程式，旨在將 PDF 文件「智慧重建」為可編輯的 PowerPoint (.pptx) 簡報。
 
 本手冊將引導您了解系統的所有功能、參數設定及其對結果的影響。
