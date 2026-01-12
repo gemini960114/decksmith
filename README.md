@@ -17,6 +17,12 @@
 
 ---
 
+## 🌟 示範網站 (:)
+- Invitation Code: ai4all
+- Url: http://decksmith.biobank.org.tw/
+
+---
+
 ## 🚀 快速開始 (Quick Start)
 
 ### 1. 前置需求
