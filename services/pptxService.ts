@@ -43,13 +43,14 @@ export const generatePptx = async (pages: PdfPage[], filename: string = "Present
         const wInches = ((xmax - xmin) / 1000) * SLIDE_WIDTH_IN;
         const hInches = ((ymax - ymin) / 1000) * SLIDE_HEIGHT_IN;
 
-        // Calculate Font Size
-        // Gemini returns size relative to 1000 units of height.
-        // Formula: (RelativeSize / 1000) * SlideHeightInches * 72 DPI
-        // Requirement: Scale to percentage of detected size.
-        const relativeSize = block.font_size || 20; // Default fallback if missing
-        const rawPoints = (relativeSize / 1000) * SLIDE_HEIGHT_IN * 72;
-        const finalFontSize = Math.max(rawPoints * PPTX_CONFIG.FONT_SCALE_FACTOR, PPTX_CONFIG.MIN_FONT_SIZE_PT);
+        // Calculate Font Size based on Box Height
+        // Rationale: block.font_size from AI is an estimate, whereas box_2d is geometric truth.
+        // Box Height ~= Line Height. Font Size ~= 0.75 * Line Height.
+        
+        const boxHeightRel = (ymax - ymin) / 1000;
+        const estimatedFontPt = boxHeightRel * SLIDE_HEIGHT_IN * 72 * PPTX_CONFIG.FONT_SCALE_FACTOR;
+        
+        const finalFontSize = Math.max(estimatedFontPt, PPTX_CONFIG.MIN_FONT_SIZE_PT);
 
         // Color Processing: Ensure Hex format without #
         let fontColor = PPTX_CONFIG.DEFAULT_COLOR;

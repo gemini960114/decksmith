@@ -29,6 +29,28 @@ export const validateApiKey = async (apiKey: string): Promise<boolean> => {
 };
 
 /**
+ * Helper: Sort blocks by reading order (Top->Bottom, Left->Right)
+ * Solves the issue where AI detection order is random or confidence-based.
+ */
+const sortBlocksByReadingOrder = (blocks: TextBlock[]): TextBlock[] => {
+    return [...blocks].sort((a, b) => {
+        if (!a.box_2d || !b.box_2d) return 0;
+        
+        const [yminA, xminA] = a.box_2d;
+        const [yminB, xminB] = b.box_2d;
+
+        // Heuristic: If vertical difference is > 20 (2% of height), consider them different lines.
+        // Sort by Y first.
+        if (Math.abs(yminA - yminB) > 20) {
+            return yminA - yminB;
+        }
+
+        // If on roughly the same line, sort by X (Left to Right)
+        return xminA - xminB;
+    });
+};
+
+/**
  * OCR: Extract text with layout information
  * Implements a Two-Stage strategy for better accuracy:
  * 1. Detection Pass: Focus strictly on geometry (boxes) and content.
@@ -80,6 +102,10 @@ export const extractTextFromImage = async (
         basicBlocks = JSON.parse(detectionResponse.text) as TextBlock[];
     }
     
+    // CRITICAL FIX: Sort blocks by geometric reading order immediately
+    // This ensures multi-column layouts and tables are structured correctly
+    basicBlocks = sortBlocksByReadingOrder(basicBlocks);
+
     // Initialize 'included' property
     basicBlocks = basicBlocks.map(b => ({ ...b, included: true }));
 
@@ -123,7 +149,8 @@ export const extractTextFromImage = async (
     if (enrichmentResponse.text) {
         let enriched = JSON.parse(enrichmentResponse.text) as TextBlock[];
         // Ensure 'included' persists if implicit, but usually Phase 2 returns new objects
-        return enriched.map(b => ({ ...b, included: true }));
+        // Re-sort just in case model shuffled them, though unlikely if input was sorted
+        return sortBlocksByReadingOrder(enriched).map(b => ({ ...b, included: true }));
     }
     
     // Fallback: If phase 2 fails (e.g. empty response), return basic blocks

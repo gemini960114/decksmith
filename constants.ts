@@ -23,8 +23,9 @@ export const PDF_CONFIG = {
 export const PPTX_CONFIG = {
   // Standard PPT width is 10 inches
   SLIDE_WIDTH_IN: 10.0,
-  // Scale to 98% of detected size (Adjusted from 80%)
-  FONT_SCALE_FACTOR: 0.98,
+  // Scale factor: Convert Box Height (Line Height) to Font Size. 
+  // Typically font-size is ~75% of line-height.
+  FONT_SCALE_FACTOR: 0.75,
   MIN_FONT_SIZE_PT: 6,
   DEFAULT_FONT_FACE: "Microsoft YaHei",
   DEFAULT_COLOR: "000000",
