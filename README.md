@@ -88,14 +88,18 @@ chmod +x setup.sh
 
 ---
 
-## 🤝 貢獻與開發
-如果您想參與開發：
-1. `npm install`：安裝前端依賴。
-2. `cd server && npm install`：安裝伺服器依賴。
-3. `npm run dev`：啟動開發伺服器。
+## 🛡️ 數據與隱私說明
+
+「DeckSmith」致力於保護您的隱私：
+1. **API Key**：加密存儲於瀏覽器 LocalStorage。
+2. **數據檔案**：儲存於您本地瀏覽器的 IndexedDB。
+3. **通訊鏈路**：您的瀏覽器 ↔️ Google Gemini API (直接通訊，不經由本專案伺服器轉發)。
 
 ---
 
-## 📜 授權
-本專案基於 **Apache License 2.0** 授權。
-Copyright 2025 Google LLC & NCHC GenAI Team.
+## 🤝 維護與支援
+本專案由 **[NCHC GenAI Team](https://www.nchc.org.tw/)** 提供支援與開發。
+
+---
+
+*如果您喜歡這個專案，歡迎給我們一個 Star！🌟*
