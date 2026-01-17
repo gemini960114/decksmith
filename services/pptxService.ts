@@ -2,60 +2,56 @@ import PptxGenJS from "pptxgenjs";
 import { PdfPage } from "../types";
 import { PPTX_CONFIG } from "../constants";
 
-export const generatePptx = async (pages: PdfPage[], filename: string = "Presentation") => {
+export const generatePptx = async (pages: PdfPage[], filename: string = "Presentation", layoutValue: string = PPTX_CONFIG.DEFAULT_LAYOUT) => {
   const pptx = new PptxGenJS();
   
   if (pages.length === 0) return;
 
-  // 1. Calculate Layout based on the first page's aspect ratio
-  // This ensures the slide matches the image size/ratio exactly.
-  const firstPage = pages[0];
-  const aspectRatio = firstPage.width / firstPage.height;
+  const layout = PPTX_CONFIG.LAYOUTS.find(l => l.value === layoutValue) || PPTX_CONFIG.LAYOUTS[0];
   
-  // Set a base width (standard PPT width is 10 inches)
-  const SLIDE_WIDTH_IN = PPTX_CONFIG.SLIDE_WIDTH_IN;
-  const SLIDE_HEIGHT_IN = SLIDE_WIDTH_IN / aspectRatio;
+  const SLIDE_WIDTH_IN = layout.width;
+  const SLIDE_HEIGHT_IN = layout.height;
 
-  // Define and apply custom layout
   pptx.defineLayout({ 
-      name: 'CUSTOM_LAYOUT', 
+      name: 'SELECTED_LAYOUT', 
       width: SLIDE_WIDTH_IN, 
       height: SLIDE_HEIGHT_IN 
   });
-  pptx.layout = 'CUSTOM_LAYOUT';
+  pptx.layout = 'SELECTED_LAYOUT';
 
   for (const page of pages) {
     const slide = pptx.addSlide();
     
-    // Add Background Image (Cleaned version if available)
     const bgImage = page.cleanedDataUrl || page.originalDataUrl;
     slide.background = { data: bgImage };
 
     page.textBlocks.forEach(block => {
+        // Skip blocks that are not selected or classified as embedded artwork text
+        if (block.included === false || block.type === 'embedded_art_text') return;
         if (!block.box_2d || block.box_2d.length !== 4) return;
 
-        // Gemini Coordinates: 0-1000
         const [ymin, xmin, ymax, xmax] = block.box_2d;
         
-        // Convert 0-1000 coordinates to Slide Inches
         const xInches = (xmin / 1000) * SLIDE_WIDTH_IN;
         const yInches = (ymin / 1000) * SLIDE_HEIGHT_IN;
         const wInches = ((xmax - xmin) / 1000) * SLIDE_WIDTH_IN;
         const hInches = ((ymax - ymin) / 1000) * SLIDE_HEIGHT_IN;
 
-        // Calculate Font Size based on Box Height
-        // Rationale: block.font_size from AI is an estimate, whereas box_2d is geometric truth.
-        // Box Height ~= Line Height. Font Size ~= 0.75 * Line Height.
-        
-        const boxHeightRel = (ymax - ymin) / 1000;
-        const estimatedFontPt = boxHeightRel * SLIDE_HEIGHT_IN * 72 * PPTX_CONFIG.FONT_SCALE_FACTOR;
-        
-        const finalFontSize = Math.max(estimatedFontPt, PPTX_CONFIG.MIN_FONT_SIZE_PT);
+        // FONT SIZE OPTIMIZATION:
+        // Use the AI's "font_size" (0-1000) which represents Cap Height relative to slide height.
+        // Formula: Points = (AI_Rel_Size / 1000) * Slide_Height_Inches * 72
+        let finalFontSize = PPTX_CONFIG.MIN_FONT_SIZE_PT;
+        if (block.font_size) {
+            const aiFontSizePt = (block.font_size / 1000) * SLIDE_HEIGHT_IN * 72;
+            finalFontSize = Math.max(aiFontSizePt, PPTX_CONFIG.MIN_FONT_SIZE_PT);
+        } else {
+            // Fallback to geometric estimation if font_size is missing
+            const boxHeightRel = (ymax - ymin) / 1000;
+            finalFontSize = boxHeightRel * SLIDE_HEIGHT_IN * 72 * 0.75;
+        }
 
-        // Color Processing: Ensure Hex format without #
         let fontColor = PPTX_CONFIG.DEFAULT_COLOR;
         if (block.color) {
-            // Remove # if present, and ensure valid hex chars
             const cleanHex = block.color.replace(/[^0-9A-Fa-f]/g, '');
             if (cleanHex.length === 6 || cleanHex.length === 3) {
                 fontColor = cleanHex;
@@ -71,6 +67,7 @@ export const generatePptx = async (pages: PdfPage[], filename: string = "Present
             fontSize: finalFontSize,
             color: fontColor,
             bold: block.is_bold || false,
+            italic: block.italic || false,
             align: (block.align as any) || 'left',
             valign: 'top',
             margin: 0

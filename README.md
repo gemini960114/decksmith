@@ -1,26 +1,28 @@
-# 🛠️ DeckSmith: PDF Vision Reconstructor
+# 🛠️ DeckSmith: AI PDF Reconstruction Engine (v0.5)
 
-[![Version](https://img.shields.io/badge/version-0.4.2-blue.svg)](https://github.com/gemini960114/decksmith)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/gemini960114/decksmith)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
 **DeckSmith** 是一款強大的開源 PDF 轉 PPT (PowerPoint) 重構工具。它利用 Google Gemini AI 的視覺辨識能力，自動偵測 PDF 頁面中的文字區域，執行智慧型背景修補（Inpainting），並將文字重新轉化為可編輯的 PPT 物件，完整保留原始排版。
 
+v0.5 版本引入了全新的專案管理系統、更精確的渲染控制，以及強化版的背景修復驗證機制。
+
 ---
 
-## ✨ 核心特色
+## ✨ 核心特色 (v0.5 新特性)
 
-- 🤖 **雙階段 AI 辨識**：先偵測幾何座標，再分析字體顏色與樣式。
-- 🎨 **智慧型 Inpainting**：移除文字後自動修補背景，不損壞底下的插圖或圖表。
-- 📑 **高精確度匯出**：生成 100% 可編輯的 `.pptx` 檔案，而非單純的圖片投影片。
-- 🧪 **深層清理模式**：提供二次驗證機制，徹底消除文字殘影。
-- 🔒 **隱私優先**：前端處理配合本地伺服器代理，資料安全可控。
+- 🤖 **雙階段 AI 辨識**：先偵測幾何座標，再分析字體顏色、樣式，並自動優化**閱讀語義順序**。
+- 🎨 **智慧型 Inpainting**：移除文字後自動修補背景。v0.5 支援 **Nano Banana Pro (HQ)** 模型，處理複雜材質更精準。
+- 📑 **高精確度匯出**：生成 100% 可編輯的 `.pptx` 檔案，支援 **16:9** 與 **4:3** 比例切換。
+- 🧪 **Deep Clean (深層清理)**：新增雙重驗證機制，自動二次掃描並消除殘影。
+- 📂 **專案紀錄管理**：整合 IndexedDB，支援多專案保存、歷史紀錄恢復與快取清理。
+- 🔒 **隱私優先**：API Key 加密儲存於 LocalStorage，處理數據留存在本地瀏覽器資料庫。
 
 ---
 
 ## 🌟 示範網站
-- Invitation Code: ai4all
-
-- Url: http://decksmith.biobank.org.tw/
+- **URL**: [https://decksmith.biobank.org.tw/](https://decksmith.biobank.org.tw/)
+- **Invitation Code**: `ai4all`
 
 ---
 
@@ -33,75 +35,56 @@
 - **Gemini API Key**：請至 [Google AI Studio](https://aistudio.google.com/) 取得。
 
 ### 2. 一鍵啟動 (Automated Setup)
-如果您是第一次安裝，建議直接執行自動化腳本。它會自動產生開發用 SSL 憑證並啟動服務：
-
 ```bash
 # 複製專案並進入目錄
 git clone https://github.com/gemini960114/decksmith
 cd decksmith
 
-# 賦予權限並執行
+# 賦予權限並執行啟動腳本
 chmod +x setup.sh
 ./setup.sh
 ```
 
-啟動後，請瀏覽 [https://localhost](https://localhost)。
+啟動後，請瀏覽 [https://localhost:4173](https://localhost:4173) (預設埠號已更新)。
 
 ---
 
 ## 📖 操作指南 (User Guide)
 
 ### 第一步：身份驗證
-開啟網頁後，輸入您的 **Gemini API Key**。該金鑰僅儲存於您的瀏覽器 `localStorage` 中，不會上傳。
+輸入 **Invitation Code** (`ai4all`) 與您的 **Gemini API Key**。
 
-### 第二步：配置處理參數
-在檔案上傳前，您可以針對需求進行設定：
-- **Render Scale (2.0x)**：解析度設定，數值越高識別越準，但處理越慢。
-- **Removal Padding**：文字移除區域的緩衝邊界。
-- **AI Models**：建議選擇 `Gemini 3 Pro` 以獲得最佳重構效果。
+### 第二步：全域參數配置 (Initial Configuration)
+- **Render Resolution**：設定 PDF 轉圖片的最高解析度 (建議 1536px 或 2048px)。
+- **Deep Clean**：若背景複雜，建議開啟此項以進行雙重去字驗證。
+- **AI Models**：可自定義 OCR 與 Cleaning 模型組合。
 
-### 第三步：上傳與選取
-- 拖放 PDF 檔案至上傳區，系統會自動拆解頁面。
-- 勾選您想要重構的頁面，點擊 **"Process Selected"**。
+### 第三步：專案管理
+- **上傳檔案**：拖放 PDF 後系統會自動建立新專案。
+- **歷史紀錄**：點擊左上角圖示開啟側邊欄，切換先前處理過的專案。
 
-### 第四步：手動微調 (選用)
-如果 AI 漏掉某些部分，點擊頁面卡片的「編輯」圖示：
-- 您可以點擊方框來 **排除/包含** 特定文字塊。
-- 變更特定頁面的處理參數並重新處理。
+### 第四步：單頁微調 (Tune Mode)
+若 AI 預估有誤，進入微調模式：
+- **紅/綠框切換**：快速決定哪些文字要提取，哪些要留在背景。
+- **Save Only**：v0.5 新增功能，僅更新標籤而不重新消耗 API 額度執行 AI 模型。
 
-### 第五步：下載成果
-處理完成後（狀態顯示為 DONE），點擊 **"Download"** 即可獲得重構後的 PowerPoint 檔案。
-
----
-
-## 🛠️ 圖書說明 (Handbook Details)
-
-詳細的圖書說明請參閱：
-👉 [**完整圖書說明 (Handbook.md)**](./Handbook.md)
+### 第五步：匯出與下載
+選擇輸出的 **Aspect Ratio** (16:9 或 4:3)，點擊 **Download** 生成 PPTX。
 
 ---
 
-## 🛠️ 安裝說明 (Installation Details)
+## 📚 相關手冊
 
-詳細的安裝流程、Nginx 配置與故障排除，請參閱：
-👉 [**完整安裝手冊 (INSTALL.md)**](./INSTALL.md)
+- 👉 [**操作手冊 (Handbook.md)**](./Handbook.md) 
+- 👉 [**安裝與部署手冊 (INSTALL.md)**](./INSTALL.md)
 
 ---
 
 ## 🔧 技術堆疊
-- **Frontend**: React (TSX), Tailwind CSS, Vite
-- **Backend**: Node.js, Express, WebSocket (Proxy for Gemini)
-- **AI Engine**: Google Gemini API (@google/genai)
-- **Infrastructure**: Docker, Nginx (SSL Termination)
-
----
-
-## 🛡️ 數據與隱私說明
-
-「DeckSmith」致力於保護您的隱私：
-1. **API Key**：加密存儲於瀏覽器 LocalStorage。
-2. **數據檔案**：儲存於您本地瀏覽器的 IndexedDB。
-3. **通訊鏈路**：您的瀏覽器 ↔️ Google Gemini API (直接通訊，不經由本專案伺服器轉發)。
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
+- **Storage**: Browser IndexedDB (via Dexie-like implementation)
+- **AI Engine**: Google Gemini 1.5/2.0 API (Flash & Pro Models)
+- **Infrastructure**: Docker, Nginx (SSL & Static Serving)
 
 ---
 

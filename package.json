@@ -1,5 +1,5 @@
 {
-  "name": "pdf-vision-reconstructor-v0.4.2",
+  "name": "pdf-vision-reconstructor-v0.5.1",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,8 +15,9 @@
     "pptxgenjs": "^4.0.1",
     "idb": "8.0.0",
     "path": "^0.12.7",
+    "@vitejs/plugin-react": "^5.1.2",
     "vite": "^7.3.1",
-    "@vitejs/plugin-react": "^5.1.2"
+    "url": "^0.11.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

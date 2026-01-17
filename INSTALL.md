@@ -1,6 +1,6 @@
-# DeckSmith 安裝與部署手冊 (INSTALL.md)
+# DeckSmith 安裝與部署手冊 (v0.5)
 
-DeckSmith 是一個基於 Google Gemini AI 的 PDF 轉 PPT 工具，能自動辨識 PDF 內容、移除背景文字並重新構建為可編輯的 PowerPoint 簡報。本文件將引導您完成本專案的安裝與部署。
+**DeckSmith** 是一個運用 Google Gemini 先進視覺模型技術的 PDF 轉 PPT 重建引擎。v0.5 版本強化了本地儲存 (IndexedDB)、專案管理與高效能並行處理。本文件將引導您完成部署。
 
 ---
 
@@ -14,44 +14,34 @@ DeckSmith 是一個基於 Google Gemini AI 的 PDF 轉 PPT 工具，能自動辨
   - 請至 [Google AI Studio](https://aistudio.google.com/) 申請 API 金鑰。
 - **SSL 憑證** (必要，用於安全上下文以啟用 Web API)：
   - 需要 `fullchain.pem` 與 `privkey.pem`。
-  - 若為本機測試，可使用 `mkcert` 或 `openssl` 自簽憑證。
+  - v0.5 仍強制要求 HTTPS 環境，以確保 Web Worker 與 Crypto API 正常運作。
 
 ---
 
-## 2. 檔案目錄結構準備
+## 2. 專案目錄結構
 
-請確保您的專案目錄結構如下（若缺少 `ssl` 目錄請自行建立）：
+v0.5 的核心邏輯主要位於 `App.tsx`、`services/` 與 `utils/`，並透過 Docker 進行靜態部署。
 
 ```text
 decksmith/
 ├── ssl/                   # 存放 SSL 憑證 (由您提供)
 │   ├── fullchain.pem
 │   └── privkey.pem
-├── server/                # 後端伺服器程式碼
-├── public/                # 靜態資源
-├── App.tsx                # Frontend 主程式
-├── docker-compose.yml     # Docker 編排檔案
-├── Dockerfile             # 容器建構檔案
-├── nginx.conf             # Nginx 設定
-└── ... (其他原始碼檔案)
+├── App.tsx                # 主應用程式邏輯 (v0.5 更新)
+├── services/              # AI (Gemini), PDF, PPTX 服務層
+├── utils/                 # Storage (IndexedDB) 與其他工具
+├── nginx.conf             # v0.5 優化的 Nginx 反向代理設定
+├── Dockerfile             # 多階段建構 (Build & Serve)
+└── docker-compose.yml     # 定義服務與埠號掛載
 ```
-
-### 建立 SSL 目錄
-在專案根目錄下執行：
-```bash
-mkdir ssl
-```
-將您的 `fullchain.pem` 與 `privkey.pem` 放入 `ssl/` 資料夾中。
 
 ---
 
 ## 3. 安裝與啟動步驟
 
-本專案提供自動化腳本 `setup.sh`，可一鍵處理憑證與部署。
-
 ### 🚀 方式一：自動化安裝 (推薦)
 
-執行以下指令，系統會自動複製專案、檢查/產生 SSL 憑證並啟動容器：
+本專案提供 `setup.sh` 腳本，可一鍵處理自簽憑證並部署：
 
 ```bash
 # 複製專案
@@ -63,19 +53,17 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-**`setup.sh` 的運作邏輯：**
-1. 建立 `ssl/` 目錄。
-2. 檢查是否有現成憑證，若無則呼叫 `openssl` 產生 **自簽憑證** (由 `localhost` 簽發)。
-3. 執行 `docker-compose up -d --build`。
+**`setup.sh` 在 v0.5 的邏輯：**
+1. 建立 `ssl/` 目錄並檢查憑證。
+2. 自動產生 localhost 自簽憑證（若目錄為空）。
+3. 執行 `docker-compose up -d --build` 並預設開放 **443** (HTTPS) 與 **4173** (Vite Preview) 等埠號設定。
 
 ---
 
 ### 📦 方式二：手動安裝 (進階)
 
-如果您希望手動控制或使用正式憑證：
-
 #### 步驟 A：配置 SSL
-將您的 `fullchain.pem` 與 `privkey.pem` 放入 `ssl/` 資料夾。
+將正式的證書（`fullchain.pem` 與 `privkey.pem`）手動放入 `ssl/` 資料夾。
 
 #### 步驟 B：建構並啟動
 在專案根目錄執行：
@@ -83,66 +71,64 @@ chmod +x setup.sh
 docker-compose up -d --build
 ```
 
-這項指令會執行以下動作：
-1.  **Stage 1**: 使用 Node.js 22 映像檔建構前端 React 程式碼。
-2.  **Stage 2**: 建構 Express 後端伺服器並整合前端靜態檔案。
-3.  **Nginx**: 啟動 Nginx 容器，並掛載您的 SSL 憑證。
+**v0.5 建構說明：**
+1. **Frontend Build**: 使用 Node.js 22 環境將 React (Vite) 編譯為高度優化的靜態資源。
+2. **Web Server**: 啟動基於 Nginx 的容器，並掛載 `nginx.conf` 與 `ssl` 憑證。
 
-### 步驟 C：確認服務狀態
-執行以下指令確認容器是否正常運作：
+#### 步驟 C：確認狀態
 ```bash
 docker ps
 ```
-您應該會看到 `decksmith-app` 與 `decksmith-nginx` 兩個容器正在運行。
+確認服務為 `Up` 狀態。
 
 ---
 
-## 4. 存取應用程式
+## 4. 存取與使用
 
-安裝完成後，開啟瀏覽器並輸入：
+開啟瀏覽器並輸入：
 
-- **URL**: `https://localhost` (或您在 Nginx 設定中指定的域名)
+- **URL**: `https://localhost` (或您的伺服器 IP)
 
-> **注意**：由於應用程式使用 Web Crypto API 與 Web Workers，必須在 **HTTPS** 環境下運行（或 localhost），否則 PDF 上傳功能可能會失效。
+> **核心說明**：v0.5 引入了 **IndexedDB**。處理過程中產生的圖片快取與專案 meta 資料會直接儲存在瀏覽器本地資料庫中。這意味著：
+> 1. 您可以關閉視窗，下次開啟時透過「歷史紀錄」恢復專案。
+> 2. 由於資料量較大，請確保磁碟剩餘空間充足（一次處理 20 頁 PDF 約需 50-100MB 剩餘空間）。
 
 ---
 
-## 5. 必要說明與功能配置
+## 5. v0.5 重要配置調整
 
-### 1. API Key 使用方式
-DeckSmith 支援兩種 API Key 提供方式：
-- **前端輸入**：進入首頁後，系統會提示您輸入 Gemini API Key，該金鑰會安全地儲存在瀏覽器的其餘 `localStorage` 中。
-- **後端代理**：若您在啟動容器時設定了 `GEMINI_API_KEY` 環境變數，後端 proxy 會嘗試使用該金鑰。
+### 1. 服務埠號
+v0.5 預設將 Nginx 對外埠號設定為 `443`。若需更改，請修改 `docker-compose.yml` 中的 `ports` 對應。
 
-### 2. PDF 處理設定
-在開始處理前，您可以在介面上調整以下參數：
-- **Render Scale**: 渲染縮放比例（建議 2.0，若需要更高解析度可調高）。
-- **Removal Padding**: 文字移除時的擴張邊界。
-- **AI Models**: 選擇不同的 Gemini 世代模型進行 OCR 與 Inpainting。
+### 2. 環境變數 (.env)
+您可以建立 `.env` 檔案預填相關參數：
+- `VITE_APP_VERSION=0.5.0`
+- `INVITATION_CODE=ai4all`
 
-### 3. 本地開發 (不使用 Docker)
-若要進行本地開發：
-1. 進入根目錄：`npm install && npm run dev` (啟動前端 Vite)
-2. 進入 `server` 目錄：`npm install && node server.js` (啟動後端)
+### 3. API Key 安全性
+金鑰僅儲存於用戶瀏覽器的 LocalStorage，不經過伺服器轉發，系統安全性已在 v0.5 進一步強化，與 Google Gemini API 採直接端對端通訊。
 
 ---
 
 ## 6. 常見問題排除 (Troubleshooting)
 
-- **SSL 錯誤**：若瀏覽器顯示憑證無效，請確認 `ssl/` 目錄下的檔名是否正確為 `fullchain.pem` 與 `privkey.pem`。
-- **PDF 上傳沒反應**：
-  - 請檢查瀏覽器開發者工具 (F12) 的 Console。
-  - 確保您使用的是 HTTPS 協議。
-- **容器啟動失敗**：
-  - 檢查埠號 80 與 443 是否被其他程式佔用。
-  - 使用 `docker-compose logs -f` 查看錯誤日誌。
+- **IndexedDB 權限錯誤**：若瀏覽器開啟「無痕模式」，某些 API 可能受限導致處理中斷。請使用正常模式。
+- **渲染解析度過高 (3072px)**：若您的伺服器或客戶端機器記憶體較低，調高解析度可能導致頁面當掉。建議從 1536px 開始嘗試。
+- **HTTPS 憑證無效**：
+  - 檢查 `nginx.conf` 中憑證路徑是否正確。
+  - 若使用自簽憑證，請在瀏覽器彈出的危險警告中選擇「繼續存取」。
 
 ---
 
-## 7. 更新說明
+## 7. 數據更新與維修
 
-若有程式碼更新，請執行以下指令重新建構：
+若要更新至最新版本：
 ```bash
+git pull
 docker-compose down
 docker-compose up -d --build
 ```
+
+---
+
+*Document Version: 1.1 | Applicable Version: DeckSmith v0.5*

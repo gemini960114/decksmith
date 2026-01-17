@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PdfPage, PageStatus } from '../types';
 
@@ -6,12 +5,12 @@ interface PageCardProps {
   page: PdfPage;
   onEdit: (page: PdfPage) => void; 
   onToggleSelection: (id: number) => void; 
+  isProcessing: boolean; // Added to control Tune button availability
 }
 
-const PageCard: React.FC<PageCardProps> = ({ page, onEdit, onToggleSelection }) => {
+const PageCard: React.FC<PageCardProps> = ({ page, onEdit, onToggleSelection, isProcessing }) => {
   const [viewMode, setViewMode] = useState<'original' | 'cleaned'>('original');
 
-  const isDone = page.status === PageStatus.DONE;
   const hasCleaned = !!page.cleanedDataUrl;
 
   return (
@@ -23,10 +22,11 @@ const PageCard: React.FC<PageCardProps> = ({ page, onEdit, onToggleSelection }) 
       <div className="flex justify-between items-center px-1">
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
              <div 
-                onClick={() => onToggleSelection(page.id)}
+                onClick={() => !isProcessing && onToggleSelection(page.id)}
                 className={`
                     w-5 h-5 rounded-md flex items-center justify-center cursor-pointer transition-colors border
                     ${page.selected ? 'bg-brand-600 border-brand-600' : 'bg-white border-slate-300 hover:border-slate-400'}
+                    ${isProcessing ? 'cursor-not-allowed' : 'cursor-pointer'}
                 `}
              >
                 {page.selected && (
@@ -63,7 +63,10 @@ const PageCard: React.FC<PageCardProps> = ({ page, onEdit, onToggleSelection }) 
       </div>
 
       {/* Image Viewport */}
-      <div className="relative aspect-[3/4] sm:aspect-[4/3] w-full bg-slate-100 rounded-xl overflow-hidden group cursor-pointer" onClick={() => onToggleSelection(page.id)}>
+      <div 
+        className="relative aspect-[3/4] sm:aspect-[4/3] w-full bg-slate-100 rounded-xl overflow-hidden group cursor-pointer" 
+        onClick={() => !isProcessing && onToggleSelection(page.id)}
+      >
         <img 
           src={viewMode === 'cleaned' && page.cleanedDataUrl ? page.cleanedDataUrl : page.originalDataUrl} 
           alt={`Page ${page.id}`} 
@@ -84,11 +87,18 @@ const PageCard: React.FC<PageCardProps> = ({ page, onEdit, onToggleSelection }) 
                 </button>
             )}
             <button 
+                disabled={isProcessing}
                 onClick={(e) => {
                     e.stopPropagation();
                     onEdit(page);
                 }}
-                className="bg-brand-600 text-white shadow-xl px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transform hover:scale-105 transition-transform flex items-center gap-1"
+                className={`
+                    shadow-xl px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transform transition-all flex items-center gap-1
+                    ${isProcessing 
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                        : 'bg-brand-600 text-white hover:scale-105 hover:bg-brand-700'
+                    }
+                `}
             >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 Tune

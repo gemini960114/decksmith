@@ -16,16 +16,17 @@ export const STORAGE_CONFIG = {
 
 export const PDF_CONFIG = {
   WORKER_SRC: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
-  DEFAULT_SCALE: 2.0,
-  DEFAULT_PADDING: 20,
+  GLOBAL_SCALE_OPTIONS: [1024, 1536, 2048, 2560, 3072],
+  DEFAULT_GLOBAL_SCALE: 2048,
+  DEFAULT_INDIVIDUAL_SCALE: 2.0,
 };
 
 export const PPTX_CONFIG = {
-  // Standard PPT width is 10 inches
-  SLIDE_WIDTH_IN: 10.0,
-  // Scale factor: Convert Box Height (Line Height) to Font Size. 
-  // Typically font-size is ~75% of line-height.
-  FONT_SCALE_FACTOR: 0.75,
+  LAYOUTS: [
+    { value: '16:9', label: 'Widescreen (16:9)', width: 10, height: 5.625 },
+    { value: '4:3', label: 'Standard (4:3)', width: 10, height: 7.5 }
+  ],
+  DEFAULT_LAYOUT: '16:9',
   MIN_FONT_SIZE_PT: 6,
   DEFAULT_FONT_FACE: "Microsoft YaHei",
   DEFAULT_COLOR: "000000",
@@ -43,69 +44,48 @@ export const MODEL_CONFIG = {
   DEFAULT_OCR_MODEL: 'gemini-3-flash-preview',
   DEFAULT_CLEANING_MODEL: 'gemini-2.5-flash-image',
   
-  // Logic Thresholds
-  // 0-1000 units, approx 1.5% of dimension
   BOX_MERGE_THRESHOLD: 15, 
-  // Max boxes to send to inpainting to avoid context limit
   MAX_INPAINT_BOXES: 150,
-  // Temperature settings
   TEMP_OCR: 0,
   TEMP_INPAINTING: 0.2,
 };
 
 export const PROMPTS = {
-  // P-01
   API_VALIDATION: "Test",
 
-  // P-02
-  OCR_DETECTION: `
-Analyze this image and extract ALL visible text.
+  OCR_SINGLE_PASS: `
+Analyze this image and extract ALL visible text with full layout and style information.
 
 CRITICAL INSTRUCTIONS:
-1. **DETECTION PRIORITY**: Find every single character, including small headers, footers, and labels.
-2. **BOUNDING BOXES**: Return precise [ymin, xmin, ymax, xmax] coordinates (0-1000 scale).
-3. **SEGMENTATION**: Split text into visual lines.
-4. **NO STYLING**: Do not analyse color or font yet. Focus 100% on finding the text.
+1. DETECTION: Find every character, including headers, footers, labels, and annotations.
+2. GEOMETRY: Provide precise [ymin, xmin, ymax, xmax] coordinates on a 0-1000 scale, independent of the original image pixel size.
+3. STYLING: For each text block, determine:
+   - "font_size": Relative height of the characters (0-1000 scale). This should represent the Cap Height (height of uppercase letters). Ensure it is consistent with the geometry.
+   - "is_bold": Whether the text appears bold (boolean).
+   - "italic": Whether the text appears italic (boolean).
+   - "color": Dominant hex color (e.g., "#000000").
+   - "align": Text alignment ("left", "center", or "right").
+4. TYPE: Classify each text block as:
+   - "presentation_text" → main document text, headers, and bullet points to be extracted for the PPTX.
+   - "embedded_art_text" → text physically integrated into charts, diagrams, or illustrations that should stay in the background.
 
 OUTPUT FORMAT:
-JSON Array: [{ "text": "...", "box_2d": [ymin, xmin, ymax, xmax] }]
+Return a JSON array of objects with keys: "text", "geometry", "font_size", "is_bold", "italic", "color", "align", "type".
   `,
 
-  // P-03
-  OCR_ENRICHMENT: (basicBlocks: TextBlock[]) => `
-You are a design analyzer. I have detected text in this image. 
-Your job is to identify the visual attributes (Color, Font Size, Bold, Alignment) for each provided block.
+  INPAINTING: `This is a slide from a presentation. 
 
-INPUT BLOCKS:
-${JSON.stringify(basicBlocks)}
+TASK:
+Remove ONLY the overlay text that belongs to the presentation, including titles, bullet points, headers, footers, and annotations. 
 
-INSTRUCTIONS:
-1. Return the EXACT same list of blocks, ensuring text and box_2d match the input.
-2. Add the following fields to each object:
-   - "color": Dominant hex color (e.g. #FF0000).
-   - "font_size": Relative height (0-1000 scale).
-   - "is_bold": boolean.
-   - "align": "left", "center", or "right".
+IMPORTANT:
+- STRICTLY PRESERVE all illustrations, characters, diagrams, charts, icons, photographs, and any text that is physically part of these elements (e.g., chart labels, axes numbers, labels inside drawings, or text in illustrations).
+- Do NOT remove, alter, or obscure any part of illustrations, diagrams, or embedded text.
+- Only remove standalone presentation text that is not integrated into artwork or diagrams.
+- Maintain the original background seamlessly, reconstructing any areas where text was removed naturally.
+- If any text is close to illustrations or charts, carefully preserve the artwork while removing the overlay text.
 
-OUTPUT:
-JSON Array of fully enriched text blocks.
-  `,
-
-  // P-04
-  INPAINTING: (boxes: number[][]) => `
-Edit the provided image.
-
-STRATEGY: INTELLIGENT TEXT REMOVAL
-Your goal is to remove text from the specified regions while PRESERVING diagrams, icons, and illustrations.
-
-INSTRUCTIONS:
-1. **TARGET REGIONS**: Focus strictly on the provided bounding boxes.
-2. **ACTION**: Carefully remove the text strokes within the boxes.
-3. **BACKGROUND**: Fill the removed text area with the underlying background color or texture.
-4. **SAFETY**: If a box overlaps a character, robot, or detailed illustration, DO NOT ERASE THE ILLUSTRATION. Only remove the text characters on top of it.
-5. **QUALITY**: Seamless blending. No white patches over graphics.
-
-REGIONS TO CLEAN (0-1000 coords):
-${JSON.stringify(boxes)}
-  `
+RETURN:
+- Return ONLY the final edited image.
+- Ensure the visual integrity of the slide is fully preserved.`
 };

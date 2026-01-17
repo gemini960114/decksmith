@@ -1,4 +1,3 @@
-
 export interface BoundingBox {
   ymin: number;
   xmin: number;
@@ -11,39 +10,39 @@ export interface TextBlock {
   box_2d: number[]; // [ymin, xmin, ymax, xmax]
   font_size?: number;
   is_bold?: boolean;
+  italic?: boolean; // New: Support for italic text
   align?: string;
   color?: string;
-  included?: boolean; // New: If false, this block will be skipped during cleaning
+  included?: boolean; 
+  type?: 'presentation_text' | 'embedded_art_text'; // New: Text classification
 }
 
 export enum PageStatus {
   IDLE = 'IDLE',
-  RENDERING = 'RENDERING', // New status for re-rendering PDF
-  ANALYZING = 'ANALYZING', // OCR
-  CLEANING = 'CLEANING',   // Image Inpainting
-  VERIFYING = 'VERIFYING', // New: Checking for leftovers
+  RENDERING = 'RENDERING', 
+  ANALYZING = 'ANALYZING', 
+  CLEANING = 'CLEANING',   
+  VERIFYING = 'VERIFYING', 
   DONE = 'DONE',
   ERROR = 'ERROR'
 }
 
 export interface PdfPage {
   id: number;
-  originalDataUrl: string; // Base64 (Heavy)
-  cleanedDataUrl: string | null; // Base64 (Heavy)
+  originalDataUrl: string; 
+  cleanedDataUrl: string | null; 
   textBlocks: TextBlock[];
   status: PageStatus;
   width: number;
   height: number;
   aspectRatio: number;
   scale: number;
-  padding?: number;
   selected: boolean;
   ocrModel?: string;
   cleaningModel?: string;
-  enableVerification?: boolean; // New: Toggle for 2-pass cleaning
+  enableVerification?: boolean; 
 }
 
-// For Storage (Lightweight version of PdfPage to store in LocalStorage)
 export interface PdfPageMetadata {
     id: number;
     textBlocks: TextBlock[];
@@ -52,20 +51,18 @@ export interface PdfPageMetadata {
     height: number;
     aspectRatio: number;
     scale: number;
-    padding?: number;
     selected: boolean;
     ocrModel?: string;
     cleaningModel?: string;
     enableVerification?: boolean;
-    // DataURLs are NOT stored here, but in IndexedDB
 }
 
 export interface ProjectJob {
-    id: string; // UUID
+    id: string; 
     name: string;
     timestamp: number;
     pageCount: number;
-    pages: PdfPageMetadata[]; // Lightweight pages
+    pages: PdfPageMetadata[]; 
 }
 
 export enum ProcessingMode {

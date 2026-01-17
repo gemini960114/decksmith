@@ -69,18 +69,25 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 
                 {/* Invitation Code */}
-                <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Invitation Code</label>
-                    <input 
-                        type="password"
-                        value={inviteCode}
-                        onChange={(e) => setInviteCode(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-medium text-sm"
-                        placeholder="Enter access code"
-                        required
-                    />
-                </div>
+                <div className="space-y-2 relative">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">
+                    Invitation Code
+                </label>
 
+                <input
+                    type="password"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-medium text-sm"
+                    placeholder="Enter access code"
+                    required
+                />
+
+                {/* 右上角小標籤 */}
+                <span className="absolute top-1 left-auto right-3 -translate-y-1/2 bg-slate-100 text-slate-500 text-xs px-2 py-0.5 rounded-full font-medium shadow-sm">
+                    Code: ai4all
+                </span>
+                </div>
                 {/* API Key */}
                 <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1">Google API Key</label>
