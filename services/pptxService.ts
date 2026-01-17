@@ -1,3 +1,4 @@
+
 import PptxGenJS from "pptxgenjs";
 import { PdfPage } from "../types";
 import { PPTX_CONFIG } from "../constants";
@@ -23,7 +24,15 @@ export const generatePptx = async (pages: PdfPage[], filename: string = "Present
     const slide = pptx.addSlide();
     
     const bgImage = page.cleanedDataUrl || page.originalDataUrl;
-    slide.background = { data: bgImage };
+    
+    // Change: Add image as a slide element instead of background
+    slide.addImage({ 
+      data: bgImage, 
+      x: 0, 
+      y: 0, 
+      w: SLIDE_WIDTH_IN, 
+      h: SLIDE_HEIGHT_IN 
+    });
 
     page.textBlocks.forEach(block => {
         // Skip blocks that are not selected or classified as embedded artwork text
