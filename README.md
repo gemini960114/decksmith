@@ -24,6 +24,36 @@ DeckSmith 是一個結合生成式 AI 技術的網頁應用程式，旨在將靜
 
 ---
 
+## 🌟 示範網站
+- **URL**: [https://decksmith.biobank.org.tw/](https://decksmith.biobank.org.tw/)
+- **Invitation Code**: `ai4all`
+
+---
+
+## 🚀 快速開始 (Quick Start)
+
+### 1. 前置需求
+- **Docker & Docker Compose**
+- **SSL 憑證** (若未提供, setup.sh流程會自動生成)：由於使用先進的 Web API，必須於 HTTPS 環境執行。
+  - 將 `fullchain.pem` 與 `privkey.pem` 放入專案根目錄的 `ssl/` 資料夾中。
+
+### 2. 一鍵啟動 (Automated Setup)
+```bash
+# 複製專案並進入目錄
+git clone https://github.com/gemini960114/decksmith
+cd decksmith
+
+# 賦予權限並執行啟動腳本
+chmod +x setup.sh
+./setup.sh
+```
+
+啟動後，請瀏覽 [https://localhost](https://localhost)。
+
+
+
+---
+
 ## 📖 操作手冊
 
 ### 1. 登入與設定
